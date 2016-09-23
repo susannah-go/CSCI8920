@@ -12,8 +12,10 @@ def decrypt_ecb(c, k):
 
 
 # encrypt plaintext p with key k, and return ciphertext
-def encrypt_ecb(p, k):
-    p = pkcs7_pad(p.decode(), 128)
+# if padding = True, then PKCS7 padding is implemented, otherwise it is not
+def encrypt_ecb(p, k, padding):
+    if padding:
+        p = pkcs7_pad(p.decode('latin1'), 128)
     cipher = AES.new(k, AES.MODE_ECB)
     c_text = cipher.encrypt(bytes(p))
     return c_text
@@ -34,8 +36,8 @@ if __name__ == '__main__':
             foo = decrypt_ecb(ciphertext, key)
             foo = bytes(foo, 'utf-8')
 
-            print(str(encrypt_ecb(b'no pain no gain!', key), 'latin1'))
-            print(base64.b64encode(encrypt_ecb(foo, key)))
+            # print(str(encrypt_ecb(b'no pain no gain!', key, True), 'latin1'))
+            print(base64.b64encode(encrypt_ecb(foo, key, True)))
 
     except IOError as e:
         sys.exit("Error: invalid filename")

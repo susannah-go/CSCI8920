@@ -12,6 +12,7 @@ global_iv = bytes(bytearray(b'\x00' * 16))
 
 
 # use built-in CBC mode with ciphertext c and key k to evaluate output
+# does not do "chopping" of PKCS7 padding
 def test_decrypt(c, k, iv):
     cipher = AES.new(k, AES.MODE_CBC, iv)
     plaintext = cipher.decrypt(c)
@@ -20,6 +21,7 @@ def test_decrypt(c, k, iv):
 
 # use built-in CBC mode with plaintext p and key k to evaluate output
 def test_encrypt(p, k, iv):
+    p = bytes(pkcs7_pad(p.decode('latin1'), 128))   # add in PKCS7 padding
     cipher = AES.new(k, AES.MODE_CBC, iv)
     c_text = cipher.encrypt(p)
     return c_text
@@ -28,7 +30,7 @@ def test_encrypt(p, k, iv):
 # CBC mode implemented by hand with byte plaintext p and key k
 def encrypt_cbc(p, k, iv):
 
-    p = pkcs7_pad(p.decode(), 128)
+    p = pkcs7_pad(p.decode('latin1'), 128)
 
     # make list of blocks
     blocks = []
@@ -38,13 +40,12 @@ def encrypt_cbc(p, k, iv):
 
     # xor and encrypt to get ciphertext
     h1 = binascii.hexlify(iv)
-    print(type(h1))
     c_text = []
     for b in blocks:
         h2 = binascii.hexlify(b)
         x = binary_xor(h1.decode('latin1'), h2.decode('latin1'))
         x = hex(int(x, 2))[2:].zfill(32)
-        do_aes = encrypt_ecb(binascii.unhexlify(x), k)
+        do_aes = encrypt_ecb(binascii.unhexlify(x), k, False)
         h1 = binascii.hexlify(do_aes)  # update h1 for next iteration
         c_text.append(str(do_aes, 'latin1'))
 
@@ -114,8 +115,8 @@ if __name__ == '__main__':
 
         # use built-in encryption CBC mode
         # print(test_encrypt(b'So close, no mat', key, global_iv))
-        # print(base64.b64encode(test_encrypt(b'So close, no mat', key, global_iv)))
+        # print(base64.b64encode(test_encrypt(b'hello darkness my old friend', key, global_iv)))
 
         # use encryption CBC mode implemented by hand
         # print(encrypt_cbc(b'So close, no mat', key, global_iv))
-        # print(base64.b64encode(bytes(encrypt_cbc(b'So close, no mat', key, global_iv), 'utf-8')))
+        # print(base64.b64encode(bytes(encrypt_cbc(b'hello darkness my old friend', key, global_iv), 'latin1')))
